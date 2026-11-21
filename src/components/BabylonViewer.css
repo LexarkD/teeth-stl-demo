@@ -1,0 +1,9 @@
+.babylon-canvas {
+  display: block; /* у inline канваса снизу щель, из-за неё появляется скролл */
+  width: 100%;
+  height: 100%;
+  outline: none;
+  /* Браузер не обрабатывает жесты на канвасе сам (не скроллит и не масштабирует страницу):
+     касания уходят в Babylon (camera.attachControl), свайп вращает модель */
+  touch-action: none;
+}
