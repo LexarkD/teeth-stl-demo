@@ -1,0 +1,18 @@
+3D model used in this project
+=============================
+
+File:    teeth.stl
+Title:   False Teeth Dentures Upper and Lower models Props
+Part:    Lower (lower denture only; the upper part is not used)
+Author:  Mike (@Mikester), https://www.printables.com/@Mikester
+Source:  https://www.printables.com/model/1179476-false-teeth-dentures-upper-and-lower-models-props
+Original file: "Lower" (STL, 13 MB, uploaded February 5, 2025)
+
+License: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)
+         https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+Changes:
+- teeth.stl: no changes to geometry (file renamed only).
+
+This license applies only to the 3D model files in this folder.
+It does not apply to the source code of the project.
