@@ -3,66 +3,79 @@ import {
   Color3,
   Color4,
   HemisphericLight,
-  MeshBuilder,
+  PointLight,
   Scene,
-  StandardMaterial,
   Vector3,
+  AxesViewer,
   type AbstractEngine,
 } from "@babylonjs/core";
+import { loadTeethModel } from "./loadTeethModel";
+import { frameCamera } from "./frameCamera";
 
-// Создаю сцену, у неё своё пространство "мир". Добавляю в сцену камеру, свет и объект.
-// У объекта (box) есть геометрия (форма), материал и трансформация: position, rotation, scaling.
+const SHOW_AXES = true; // Показать оси (X — красная, Y — зелёная, Z — синяя)
+
 export function createScene(engine: AbstractEngine): Scene {
   const scene = new Scene(engine);
-  // Цвет фона кадра
   scene.clearColor = new Color4(0.09, 0.09, 0.11, 1);
 
-  // Камера «на орбите»: движется по сфере радиусом radius, центр сферы — target. Камера всегда смотрит в центр.
-  // Углы — в радианах (Math.PI = 180°).
   const camera = new ArcRotateCamera(
     "camera",
-    -Math.PI / 2, // alpha — угол по горизонтали (влево-вправо). Здесь: смотрим спереди
-    Math.PI / 3, // beta — угол от верхнего полюса: 0 — сверху, π/2 — сбоку. Здесь: чуть сверху
-    8, // radius - расстояние от камеры до центра(target)
-    // Vector3 - Класс, используемый для хранения векторного представления (x, y, z) - точка в пространстве или направление.
-    new Vector3(0, 0, 0), //target - точка, вокруг которой вращается камера.
+    -Math.PI / 2, // смотрим спереди: камера стоит на стороне -Z
+    Math.PI / 3, // чуть сверху
+    10, //  radius = 10 временный: настоящее расстояние посчитает frameCamera, когда станет известен размер модели
+    new Vector3(0, 0, 0),
     scene
   );
-  camera.attachControl(); // мышь/тач управляют камерой; канвас берётся из engine
+  camera.attachControl();
 
-  // Свет «небо/земля». вектор (0, 1, 0) указывает, где небо, (свет сверху)
-  const light = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
-  light.intensity = 0.9; // яркость, по умолчанию 1
+  // Колесо мыши меняет расстояние на 1% от текущего, а не на фиксированную величину.
+  // Без этого при модели в миллиметрах один щелчок колеса двигал бы камеру меньше чем на 1 мм.
+  camera.wheelDeltaPercentage = 0.01;
 
-  // Создаю меш — это объект сцены с геометрией, трансформацией и материалом.
-  // Последний аргумент scene — меш сразу попадает в эту сцену.
-  const box = MeshBuilder.CreateBox(
-    "box",
-    { width: 1, height: 1, depth: 1 }, // размеры в единицах мира, условная величина без физического смысла.
-    scene
-  );
+  // Встроенное поведение Babylon: камера медленно облетает модель,
+  // замирает, когда пользователь её трогает, и продолжает через пару секунд бездействия.
+  camera.useAutoRotationBehavior = true;
 
-  // Трансформация считается относительно родителя; родителя нет — значит, относительно мира.
-  // Свойства заданы для наглядности. Значения равны значениям по умолчанию
-  box.position = new Vector3(0, 0, 0);
-  box.rotation = new Vector3(0, 0, 0);
-  box.scaling = new Vector3(1, 1, 1);
+  // Заполняющий свет «небо/земля»: сверху светлее, снизу groundColor,
+  // чтобы нижняя сторона модели не была чёрной. Бликов от него не нужно.
+  const ambient = new HemisphericLight("ambient", new Vector3(0, 1, 0), scene);
+  ambient.intensity = 0.5;
+  ambient.groundColor = new Color3(0.3, 0.3, 0.32);
+  ambient.specular = Color3.Black();
 
-  const material = new StandardMaterial("boxMaterial", scene);
-  //   material.wireframe = true; // показать сетку
+  // Точечный свет привязан к камере
+  // position (0,0,0) считается относительно родителя, то есть свет всегда в камере
+  // освещает ту сторону модели, на которую мы смотрим. Дает блик
+  const headlight = new PointLight("headlight", new Vector3(0, 0, 0), scene);
+  headlight.parent = camera;
+  headlight.intensity = 0.6;
 
-  // Основной цвет поверхности
-  material.diffuseColor = new Color3(0.92, 0.9, 0.84);
-  box.material = material;
-
-  // onBeforeRenderObservable — событие перед отрисовкой каждого кадра
-  // (сразу после анимаций и физики). add(...) подписывает на него функцию.
-  scene.onBeforeRenderObservable.add(() => {
-    // каждый кадр поворачиваю box вокруг оси Y на 0.01 рад.
-    // Ось проходит через опорную точку (pivot); у CreateBox она в центре — поэтому крутится на месте.
-    // getAnimationRatio() выравнивает скорость (на 30 и на 120 Гц вращение одинаковое)
-    box.rotation.y += 0.01 * scene.getAnimationRatio();
-  });
-
+  // Загрузка асинхронная: сцена возвращается сразу, модель появится, когда скачается.
+  // void — явно говорим «промис не ждём»; ошибки ловятся внутри loadTeethModel.
+  void showTeethModel(scene, camera);
   return scene;
+}
+
+// Дожидается модели и настраивает под неё сцену.
+async function showTeethModel(
+  scene: Scene,
+  camera: ArcRotateCamera
+): Promise<void> {
+  try {
+    const teeth = await loadTeethModel(scene);
+    if (!teeth) return; // сцену уничтожили, пока модель грузилась
+
+    frameCamera(camera, teeth);
+
+    if (SHOW_AXES) {
+      new AxesViewer(scene, teeth.getBoundingInfo().boundingSphere.radiusWorld);
+    }
+
+    // ОШИБКИ ЛОВЯТСЯ ТУТ:
+    // когда файл загрузился, но меша в нём нет
+    // ошибка импорта модели (ImportMeshAsync)
+  } catch (error) {
+    if (scene.isDisposed) return; // ошибка из-за уничтоженной сцены ожидаема
+    console.error("[teeth] не удалось загрузить модель:", error); //пока что просто пишу в консоль, позже можно показать сообщение на экране
+  }
 }
