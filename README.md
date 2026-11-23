@@ -2,6 +2,9 @@
 
 Проект построен на базе Vite, React и TypeScript. Основной фокус: 3D-сцена на Babylon.js — загрузка STL-модели, сенсорное управление камерой и оптимизация для мобильных устройств.
 
+<img width="470" height="427" alt="Модель, текстура, освещение" src="https://github.com/user-attachments/assets/80adb7d9-25cc-46bf-8fbc-57c16da98d69" />
+
+
 Требуется Node.js >= 20.19 или >= 22.12 (разработка ведётся на Node.js 24).
 
 # Как начать
@@ -67,7 +70,7 @@ File: teeth.stl
 Part: Lower (lower denture only; the upper part is not used)
 Author: Mike (@Mikester), https://www.printables.com/@Mikester
 Source: https://www.printables.com/model/1179476-false-teeth-dentures-upper-and-lower-models-props
-Лицензия:
+Лицензия: [MODEL-LICENSE](https://github.com/LexarkD/teeth-stl-demo/blob/main/public/models/MODEL-LICENSE.txt)
 
 ## Планы развития
 
