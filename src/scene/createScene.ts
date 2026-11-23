@@ -7,10 +7,12 @@ import {
   Scene,
   Vector3,
   AxesViewer,
+  ArcRotateCameraPointersInput,
   type AbstractEngine,
 } from "@babylonjs/core";
 import { loadTeethModel } from "./loadTeethModel";
 import { frameCamera } from "./frameCamera";
+import { enableNaturalPanning } from "./naturalPanning";
 
 const SHOW_AXES = true; // Показать оси (X — красная, Y — зелёная, Z — синяя)
 
@@ -31,10 +33,19 @@ export function createScene(engine: AbstractEngine): Scene {
   // Колесо мыши меняет расстояние на 1% от текущего, а не на фиксированную величину.
   // Без этого при модели в миллиметрах один щелчок колеса двигал бы камеру меньше чем на 1 мм.
   camera.wheelDeltaPercentage = 0.01;
+  // Естественный зум щипком
+  camera.useNaturalPinchZoom = true;
+  // Сдвиг с пальцем 1:1
+  enableNaturalPanning(camera);
 
-  // Встроенное поведение Babylon: камера медленно облетает модель,
-  // замирает, когда пользователь её трогает, и продолжает через пару секунд бездействия.
-  camera.useAutoRotationBehavior = true;
+  // Настройка жеста двумя пальцами —  либо режим сдвиг, либо режим зум. Иначе -ложные срабатывания на сенсорном экране
+  const pointers = camera.inputs.attached["pointers"];
+  if (pointers instanceof ArcRotateCameraPointersInput) {
+    pointers.multiTouchPanAndZoom = false;
+  }
+  // Порог «сдвиг или зум»: на сколько пикселей должно измениться расстояние между пальцами
+  // за одно событие касания в начале жеста, чтобы включился зум. По умолчанию 20
+  camera.pinchToPanMaxDistance = 8;
 
   // Заполняющий свет «небо/земля»: сверху светлее, снизу groundColor,
   // чтобы нижняя сторона модели не была чёрной. Бликов от него не нужно.
@@ -51,7 +62,7 @@ export function createScene(engine: AbstractEngine): Scene {
   headlight.intensity = 0.6;
 
   // Загрузка асинхронная: сцена возвращается сразу, модель появится, когда скачается.
-  // void — явно говорим «промис не ждём»; ошибки ловятся внутри loadTeethModel.
+  // void — явно говорим «промис не ждём»; ошибки ловятся внутри showTeethModel.
   void showTeethModel(scene, camera);
   return scene;
 }

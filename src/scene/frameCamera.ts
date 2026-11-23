@@ -7,7 +7,14 @@ const FRAME_PADDING = 0.05;
 const NEAR_PLANE_TO_MODEL_RADIUS = 0.01;
 
 // Дальняя плоскость отсечения — во сколько раз дальше начального расстояния камеры.
+// Должна быть больше MAX_DISTANCE_TO_START_DISTANCE + 1, иначе при максимальном отдалении дальняя сторона модели обрежется.
 const FAR_PLANE_TO_CAMERA_DISTANCE = 10;
+
+// Ограничения зума
+// Ближе этого камера войдёт внутрь модели. Изнутри стенки не рисуются
+const MIN_DISTANCE_TO_MODEL_RADIUS = 0.7;
+// Во сколько раз можно отдалиться от стартового расстояния. Больше- нет смысла
+const MAX_DISTANCE_TO_START_DISTANCE = 3;
 
 // Делаю адаптивную камеру для разных экранов
 // Ставит камеру на таком расстоянии, чтобы меш целиком помещался в кадр. Рассчитывает, что target камеры уже совпадает с центром меша.
@@ -24,12 +31,21 @@ export function frameCamera(camera: ArcRotateCamera, mesh: AbstractMesh): void {
   // Модель должна влезть по самой узкой стороне — беру меньший угол.
   const halfFovV = camera.fov / 2; // Половина угла обзора
   const halfFovH = Math.atan(Math.tan(halfFovV) * aspect);
-  //Беру меньший из двух углов (Math.min) и ставим камеру так, чтобы модель влезла по самой узкой стороне
+  //Беру меньший из двух углов (Math.min) и ставлю камеру так, чтобы модель влезла по самой узкой стороне
   const halfFov = Math.min(halfFovV, halfFovH);
 
   // Расстояние, с которого сфера касается краёв кадра.
   const fitDistance = modelRadius / Math.sin(halfFov);
   camera.radius = fitDistance * (1 + FRAME_PADDING);
+
+  // Пределы для camera.radius. Babylon проверяет их каждый кадр, при любом вводе:
+  // колесо, щипок или код.
+  camera.lowerRadiusLimit = modelRadius * MIN_DISTANCE_TO_MODEL_RADIUS;
+  camera.upperRadiusLimit = camera.radius * MAX_DISTANCE_TO_START_DISTANCE;
+  // Центр вращения можно увести от центра модели не дальше её радиуса.
+  // Расстояние считается от camera.panningOriginTarget — по умолчанию (0,0,0),
+  // а центр модели там благодаря placeAtOrigin в loadTeethModel.
+  camera.panningDistanceLimit = modelRadius;
 
   // Плоскости отсечения: камера рисует только то, что между minZ и maxZ.
   // всё ближе minZ и дальше maxZ камера не рисует
