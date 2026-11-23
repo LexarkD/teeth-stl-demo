@@ -2,6 +2,9 @@
 
 Проект построен на базе Vite, React и TypeScript. Основной фокус: 3D-сцена на Babylon.js — загрузка STL-модели, сенсорное управление камерой и оптимизация для мобильных устройств.
 
+## Демо: 
+https://teeth-stl-demo.vercel.app
+
 <img width="470" height="427" alt="Модель, текстура, освещение" src="https://github.com/user-attachments/assets/80adb7d9-25cc-46bf-8fbc-57c16da98d69" />
 
 
