@@ -1,75 +1,112 @@
-# React + TypeScript + Vite
+# Teeth STL Demo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Проект построен на базе Vite, React и TypeScript. Основной фокус: 3D-сцена на Babylon.js — загрузка STL-модели, сенсорное управление камерой и оптимизация для мобильных устройств.
 
-Currently, two official plugins are available:
+Требуется Node.js >= 20.19 или >= 22.12 (разработка ведётся на Node.js 24).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+# Как начать
 
-## React Compiler
+## Установка зависимостей
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## Запустить dev-сервер
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm run dev
 ```
+
+Приложение откроется на `http://localhost:5173`.
+
+Запуск с доступом из локальной сети — чтобы открыть демо с телефона по IP компьютера:
+
+```sh
+npm run dev-host
+```
+
+## Сборка и просмотр production-версии
+
+```sh
+npm run build
+npm run preview
+```
+
+`build` проверяет типы и собирает проект в `dist/`, `preview` запускает собранную версию локально.
+
+## Проверка кода
+
+```sh
+npm run lint
+```
+
+# О приложении
+
+Teeth STL Demo — просмотрщик 3D-модели зубного ряда в браузере. Модель можно вращать, приближать и сдвигать мышью или пальцами на телефоне.
+
+При загрузке модель автоматически центрируется и ставится вертикально, камера наводится на неё.
+
+Размеры реальные: 1 единица сцены = 1 мм, модель не масштабируется. Расстояние камеры, пределы зума и скорость сдвига считаются от размера модели.
+
+Управление мышью: вращение, зум колесом, сдвиг.
+
+Управление на телефоне: один палец — вращение, щипок — зум к точке между пальцами, два пальца — сдвиг вслед за пальцем при любом зуме.
+
+## Устройство кода
+
+`src/components/BabylonViewer` — React-компонент, который отвечает только за жизненный цикл Babylon: создание `Engine`, цикл рендера, реакцию на изменение размера окна и освобождение ресурсов (`dispose`) при размонтировании.
+
+`src/scene/` — код сцены на чистом Babylon.js без React: камера, свет, загрузка модели, материал.
+
+`StrictMode` включён намеренно: в режиме разработки он монтирует компоненты дважды и так проверяет, что очистка ресурсов работает и не остаётся двух `Engine`.
+
+## Модель
+
+File: teeth.stl
+Part: Lower (lower denture only; the upper part is not used)
+Author: Mike (@Mikester), https://www.printables.com/@Mikester
+Source: https://www.printables.com/model/1179476-false-teeth-dentures-upper-and-lower-models-props
+Лицензия:
+
+## Планы развития
+
+Счётчик FPS и draw calls, замеры «до/после» оптимизации: `hardwareScalingLevel` на мобильных, заморозка матриц и материалов, рендер по требованию.
+
+Упрощение меша и сравнение производительности.
+
+Загрузка своего STL-файла: выбор файла или drag-and-drop.
+
+Панель управления на Jotai: видимость челюстей, режим wireframe.
+
+Измерение расстояния между точками в миллиметрах.
+
+Сечение модели плоскостью со слайдером.
+
+Десктопная и мобильная сборка на Tauri 2.
+
+## Используемый технический стек
+
+### 3D
+
+@babylonjs/core
+
+@babylonjs/loaders (загрузчик STL)
+
+### Интерфейс
+
+React 19
+
+CSS без UI-библиотек
+
+### Сборка и деплой
+
+Vite
+
+Vercel
+
+### Качество кода
+
+TypeScript
+
+ESLint
